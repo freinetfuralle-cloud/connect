@@ -111,8 +111,9 @@
 </div>
 
 <script>
+// اکانت ادمین پیش‌فرض
 let usersDatabase = [
-    {"username": "admin", "password": "adminpassword", "status": "Active", "limit_gb": 999, "used_gb": 0, "remaining_days": 999, "days": 999, "volume": 999, "used": 0}
+    {"username": "admin", "password": "adminpassword", "status": "Active", "limit_gb": 999, "used_gb": 0, "expire_date": "2030-01-01"}
 ];
 let currentServerIP = "144.172.116.73";
 
@@ -143,19 +144,30 @@ function handleLogin() {
         errorText.style.display = 'none';
         document.getElementById('user-welcome').innerText = foundUser.username;
         
-        // استخراج و محاسبه حجم و روزها
-        let limit = foundUser.limit_gb !== undefined ? parseFloat(foundUser.limit_gb) : (foundUser.volume !== undefined ? parseFloat(foundUser.volume) : 0);
-        let used = foundUser.used_gb !== undefined ? parseFloat(foundUser.used_gb) : (foundUser.used !== undefined ? parseFloat(foundUser.used) : 0);
-        let remDays = foundUser.remaining_days !== undefined ? parseInt(foundUser.remaining_days) : (foundUser.days !== undefined ? parseInt(foundUser.days) : 0);
-        
+        // ۱. استخراج و فرمت کردن دقیق حجم بر اساس فایل شما
+        let limit = foundUser.limit_gb ? parseFloat(foundUser.limit_gb) : 0;
+        let used = foundUser.used_gb ? parseFloat(foundUser.used_gb) : 0;
         let remGb = limit - used;
         if (remGb < 0) remGb = 0;
 
-        // نمایش اطلاعات در کارت‌ها
-        document.getElementById('stat-volume').innerText = remGb.toFixed(2) + " GB";
-        document.getElementById('stat-days').innerText = remDays + " روز";
+        // ۲. 🛠 محاسبه زنده و دقیق تعداد روزهای باقی‌مانده بر اساس فیلتر expire_date دیتابیس شما
+        let remDays = 0;
+        if (foundUser.expire_date) {
+            const expireDate = new Date(foundUser.expire_date);
+            const today = new Date();
+            // صفر کردن ساعت برای محاسبه دقیق روز
+            expireDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            
+            const timeDiff = expireDate.getTime() - today.getTime();
+            remDays = Math.ceil(timeDiff / (1000 * 3600 * 24)); 
+        }
 
-        // سیستم تفکیک خطای هوشمند مورد نظر شما
+        // نمایش اطلاعات عددی در باکس‌ها (حتی اگر منقضی شده باشد تا کاربر ببیند حجم/زمانش چقدر بوده)
+        document.getElementById('stat-volume').innerText = remGb.toFixed(2) + " / " + limit.toFixed(0) + " GB";
+        document.getElementById('stat-days').innerText = (remDays > 0 ? remDays : 0) + " روز";
+
+        // ۳. منطق هوشمند بررسی وضعیت اشتراک و تفکیک ارورها
         let dbStatus = foundUser.status ? foundUser.status.toLowerCase() : "active";
         let alertZone = document.getElementById('status-alert-zone');
         let ipZone = document.getElementById('secure-ip-zone');
@@ -164,26 +176,26 @@ function handleLogin() {
         alertZone.innerHTML = '';
         ipZone.classList.remove('hidden');
 
-        // اولویت اول: بررسی اتمام زمان
+        // اولویت اول: اگر زمان تمام شده باشد
         if (remDays <= 0 || dbStatus === "expired") {
             ipZone.classList.add('hidden');
-            alertZone.innerHTML = '<div class="block-msg">⚠️ زمان اشتراک شما به اتمام رسیده است!<br><span style="font-size:12px; color:#94a3b8;">لطفاً جهت تمدید و دریافت مجدد آی‌پی با پشتیبانی تماس بگیرید.</span></div>';
+            alertZone.innerHTML = '<div class="block-msg">⚠️ مدت اعتبار زمانی اشتراک شما به پایان رسیده است! ❌<br><span style="font-size:12px; color:#94a3b8; font-weight:normal;">لطفاً جهت تمدید اعتبار و دریافت آی‌پی جدید با پشتیبانی تماس بگیرید.</span></div>';
             alertZone.classList.remove('hidden');
         } 
-        // اولویت دوم: بررسی اتمام حجم ترافیک
-        else if ((limit > 0 && remGb <= 0) || dbStatus === "traffic_limit") {
+        // اولویت دوم: اگر حجم ترافیک تمام شده باشد
+        else if (remGb <= 0) {
             ipZone.classList.add('hidden');
-            alertZone.innerHTML = '<div class="block-msg">⚠️ حجم ترافیک اشتراک شما به اتمام رسیده است!<br><span style="font-size:12px; color:#94a3b8;">لطفاً جهت تمدید حجم و دریافت مجدد آی‌پی با پشتیبانی تماس بگیرید.</span></div>';
+            alertZone.innerHTML = '<div class="block-msg">⚠️ حجم ترافیک اشتراک شما به اتمام رسیده است! ❌<br><span style="font-size:12px; color:#94a3b8; font-weight:normal;">لطفاً جهت تمدید حجم و دریافت آی‌پی جدید با پشتیبانی تماس بگیرید.</span></div>';
             alertZone.classList.remove('hidden');
         }
-        // اولویت سوم: اگر اکانت کلا غیرفعال یا مسدود ادمین دستی باشد
+        // اولویت سوم: اگر اکانت توسط ادمین مسدود یا غیرفعال شده باشد
         else if (dbStatus === "disabled" || dbStatus === "deactive") {
             ipZone.classList.add('hidden');
             alertZone.innerHTML = '<div class="block-msg">❌ اشتراک شما توسط مدیریت مسدود شده است!</div>';
             alertZone.classList.remove('hidden');
         }
 
-        // هدایت کاربر به داشبورد (چه اکانتش سالم باشد چه خراب)
+        // باز کردن داشبورد برای کلاینت
         document.getElementById('login-card').classList.add('hidden');
         document.getElementById('ip-card').classList.remove('hidden');
     } else {
@@ -201,7 +213,7 @@ function saveNewIP() {
     currentServerIP = ipInput;
     localStorage.setItem('saved_server_ip', ipInput);
     document.getElementById('ip-text').innerText = ipInput;
-    alert("🟢 آی‌پی جدید ثبت شد!");
+    alert("🟢 آی‌پی جدید با موفقیت در سیستم ثبت شد!");
 }
 
 function syncDatabase(input) {
@@ -213,7 +225,7 @@ function syncDatabase(input) {
             if (Array.isArray(importedData)) {
                 const hasAdmin = importedData.find(u => u.username === 'admin');
                 if (!hasAdmin) {
-                    importedData.push({"username": "admin", "password": "adminpassword", "status": "Active", "limit_gb": 999, "used_gb": 0, "remaining_days": 999, "days": 999, "volume": 999, "used": 0});
+                    importedData.push({"username": "admin", "password": "adminpassword", "status": "Active", "limit_gb": 999, "used_gb": 0, "expire_date": "2030-01-01"});
                 }
                 localStorage.setItem('users_db', JSON.stringify(importedData));
                 usersDatabase = importedData;
