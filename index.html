@@ -3,96 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ورود به سیستم دریافت آی‌پي</title>
+    <title>شبکه هوشمند SSH PRO</title>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .card { background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; max-width: 400px; width: 100%; border: 1px solid #334155; }
-        h2 { color: #38bdf8; margin-top: 0; font-size: 20px; }
+        .card { background: #1e293b; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); text-align: center; max-width: 450px; width: 100%; border: 1px solid #334155; backdrop-filter: blur(10px); }
+        h2 { color: #38bdf8; margin-top: 0; font-size: 22px; font-weight: 800; }
         p { color: #94a3b8; font-size: 14px; line-height: 1.6; }
         .form-group { text-align: right; margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 13px; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 14px; box-sizing: border-box; }
-        input:focus { border-color: #38bdf8; outline: none; }
-        .ip-box { background: #0f172a; padding: 15px; border-radius: 8px; font-size: 22px; font-weight: bold; letter-spacing: 1px; color: #22c55e; margin: 20px 0; border: 1px solid #334155; cursor: pointer; }
-        .btn { background: #0284c7; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 15px; transition: 0.2s; margin-top: 10px; }
-        .btn:hover { background: #0369a1; }
-        .error-msg { color: #ef4444; font-size: 13px; margin-top: 10px; display: none; }
-        .toast { display: none; margin-top: 10px; color: #38bdf8; font-size: 12px; }
+        label { display: block; margin-bottom: 6px; color: #94a3b8; font-size: 13px; font-weight: bold; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px; box-sizing: border-box; transition: 0.2s; }
+        input:focus { border-color: #38bdf8; outline: none; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        .ip-box { background: #0f172a; padding: 18px; border-radius: 10px; font-size: 24px; font-weight: bold; letter-spacing: 1.5px; color: #22c55e; margin: 20px 0; border: 1px solid #334155; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        
+        /* 📊 استایل شیک بخش وضعیت کاربر */
+        .user-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; text-align: right; }
+        .stat-item { background: #111827; padding: 12px; border-radius: 10px; border: 1px solid #334155; }
+        .stat-label { font-size: 11px; color: #64748b; block; margin-bottom: 4px; }
+        .stat-val { font-size: 15px; font-weight: bold; color: #f8fafc; }
+        
+        .btn { background: #0284c7; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 15px; transition: 0.2s; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn:hover { background: #0369a1; transform: translateY(-1px); }
+        .btn-secondary { background: #334155; }
+        .btn-secondary:hover { background: #475569; }
+        .btn-admin { background: #10b981; }
+        .btn-admin:hover { background: #059669; }
+        
+        .error-msg { color: #ef4444; font-size: 13px; margin-top: 10px; display: none; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 6px; }
+        .toast { display: none; margin-top: 10px; color: #38bdf8; font-size: 13px; font-weight: bold; }
         .hidden { display: none; }
-        .admin-zone { margin-top: 30px; border-top: 1px dashed #334155; padding-top: 15px; }
-        .file-label { cursor: pointer; background: #1e293b; border: 1px dashed #64748b; padding: 8px; display: block; border-radius: 6px; color: #64748b; font-size: 12px; }
+        
+        /* 🛠 استایل بخش ادمین */
+        .admin-box { background: #111827; border: 1px solid #ea580c; border-radius: 12px; padding: 15px; margin-top: 20px; text-align: right; }
+        .admin-title { color: #ea580c; font-weight: bold; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .file-label { cursor: pointer; background: #334155; border: 1px dashed #64748b; padding: 10px; display: block; border-radius: 8px; color: #94a3b8; font-size: 13px; text-align: center; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="card" id="login-card">
     <h2>🔐 ورود به شبکه SSH PRO</h2>
-    <p>برای دریافت آی‌پی جدید سرور، لطفاً نام کاربری و کلمه عبور اشتراک خود را وارد کنید.</p>
+    <p>جهت دریافت مشخصات و اتصال مجدد، مشخصات اشتراک خود را وارد کنید.</p>
     
     <div class="form-group">
         <label>نام کاربری (Username)</label>
-        <input type="text" id="username" placeholder="نام کاربری خود را وارد کنید">
+        <input type="text" id="username" placeholder="نام کاربری">
     </div>
     
     <div class="form-group">
         <label>کلمه عبور (Password)</label>
-        <input type="password" id="password" placeholder="کلمه عبور خود را وارد کنید">
+        <input type="password" id="password" placeholder="کلمه عبور">
     </div>
     
-    <button class="btn" onclick="handleLogin()">ورود و بررسی وضعیت</button>
+    <button class="btn" onclick="handleLogin()">🔓 ورود به حساب کاربر</button>
     <div class="error-msg" id="error-text">نام کاربری یا کلمه عبور اشتباه است! ❌</div>
 </div>
 
 <div class="card hidden" id="ip-card">
-    <h2>⚡ اتصال مجدد به سرویس</h2>
-    <p>خوش آمدید! آی‌پی جدید و بدون فیلتر سرور در کادر زیر قرار دارد:</p>
+    <h2>✨ داشبورد اشتراک شما</h2>
+    <p>سلام <span id="user-welcome" style="color:#38bdf8; font-weight:bold;"></span>، وضعیت اکانت شما فعال است.</p>
     
+    <div class="user-stats">
+        <div class="stat-item">
+            <span class="stat-label">📊 حجم باقی‌مانده</span>
+            <div class="stat-val" id="stat-volume" style="color: #38bdf8;">0.00 GB</div>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">⏳ زمان باقی‌مانده</span>
+            <div class="stat-val" id="stat-days" style="color: #eab308;">0 روز</div>
+        </div>
+    </div>
+
+    <p style="margin-bottom:5px; font-weight:bold; color:#94a3b8;">🌐 آی‌پی جدید و بدون فیلتر سرور:</p>
     <div class="ip-box" id="ip-text">144.172.116.73</div>
     
     <button class="btn" onclick="copyIP()">📋 کپی کردن آی‌پی جدید</button>
-    <button class="btn" style="background:#334155; margin-top:8px;" onclick="logout()">خروج از حساب</button>
+    <button class="btn btn-secondary" onclick="logout()">↩ خروج از حساب</button>
     <div class="toast" id="toast-msg">آی‌پی با موفقیت کپی شد! ✔</div>
 </div>
 
-<div class="admin-zone" style="max-width: 400px; width: 100%; position: absolute; bottom: 10px; text-align: center; opacity: 0.4;">
-    <label class="file-label">
-        ⚙️ همگام‌سازی دیتابیس کاربران (آپلود json بک‌آپ پنل)
-        <input type="file" id="backup-file" accept=".json" onchange="syncDatabase(this)" style="display: none;">
-    </label>
+<div class="card hidden" id="admin-card">
+    <h2>👑 پنل مدیریت و نظارت ادمین</h2>
+    <p>خوش آمدید ادمین عزیز. از این بخش بدون نیاز به تغییر کد گیت‌هاب، آی‌پی را تغییر دهید.</p>
+    
+    <div class="admin-box">
+        <div class="admin-title">⚡ تغییر آنی آی‌پی سرور</div>
+        <div class="form-group">
+            <label>آی‌پی جدید را وارد کنید:</label>
+            <input type="text" id="new-ip-input" placeholder="مثلا: 1.2.3.4">
+        </div>
+        <button class="btn btn-admin" onclick="saveNewIP()">💾 اعمال و بروزرسانی آی‌پی</button>
+    </div>
+
+    <div class="admin-box" style="border-color: #0284c7;">
+        <div class="admin-title" style="color: #0284c7;">💾 پشتیبان‌گیری و همگام‌سازی کلاینت‌ها</div>
+        <button class="btn" style="background:#0284c7;" onclick="downloadLocalBackup()">📥 دانلود فایل بک‌آپ کلاینت‌ها</button>
+        
+        <label class="file-label">
+            📤 آپلود فایل JSON بک‌آ‌پ پنل اصلی
+            <input type="file" id="backup-file" accept=".json" onchange="syncDatabase(this)" style="display: none;">
+        </label>
+    </div>
+
+    <button class="btn btn-secondary" onclick="logout()" style="margin-top:15px;">↩ خروج از پنل ادمین</button>
 </div>
 
 <script>
-// دیتابیس پیش‌فرض کاربران (اگر بک‌آپ هم آپلود نکنی، این یوزر تست کار میکند)
+// ۱. مقداردهی اولیه به دیتابیس کلاینت‌ها و آی‌پی
 let usersDatabase = [
-    {"username": "admin", "password": "adminpassword", "status": "Active"}
+    {"username": "admin", "password": "adminpassword", "status": "Active", "limit_gb": 999, "used_gb": 0, "remaining_days": 999}
 ];
+let currentServerIP = "144.172.116.73";
 
-// لود کردن کاربران همگام‌سازی شده از حافظه مرورگر
+// ۲. لود اطلاعات از حافظه محلی مرورگر (اگر قبلاً ست شده باشند)
+if (localStorage.getItem('saved_server_ip')) {
+    currentServerIP = localStorage.getItem('saved_server_ip');
+    document.getElementById('ip-text').innerText = currentServerIP;
+}
 if (localStorage.getItem('users_db')) {
     usersDatabase = JSON.parse(localStorage.getItem('users_db'));
 }
 
+// ۳. لاگین هوشمند تفکیک شده (کاربر / ادمین)
 function handleLogin() {
     const userIn = document.getElementById('username').value.trim();
     const passIn = document.getElementById('password').value.trim();
     const errorText = document.getElementById('error-text');
 
-    // بررسی وجود یوزر و پسورد در دیتابیس پنل
-    const foundUser = usersDatabase.find(u => u.username === userIn && u.password === passIn);
+    if (userIn === 'admin' && passIn === 'adminpassword') {
+        // ورود به بخش ادمین
+        errorText.style.display = 'none';
+        document.getElementById('new-ip-input').value = currentServerIP;
+        document.getElementById('login-card').classList.add('hidden');
+        document.getElementById('admin-card').classList.remove('hidden');
+        return;
+    }
+
+    // ورود کلاینت عادی
+    const foundUser = usersDatabase.find(u => u.username.toLowerCase() === userIn.toLowerCase() && u.password === passIn);
 
     if (foundUser) {
-        if (foundUser.status !== 'Active') {
-            errorText.innerText = "حساب شما به اتمام رسیده یا مسدود است! ⚠️";
+        if (foundUser.status !== 'Active' && foundUser.status !== 'active') {
+            errorText.innerText = "⚠️ حساب شما به اتمام رسیده یا مسدود است!";
             errorText.style.display = 'block';
             return;
         }
         errorText.style.display = 'none';
+        
+        // محاسبه و تزریق مقادیر حجم و زمان کلاینت زنده
+        document.getElementById('user-welcome').innerText = foundUser.username;
+        
+        let limit = foundUser.limit_gb ? parseFloat(foundUser.limit_gb) : 0;
+        let used = foundUser.used_gb ? parseFloat(foundUser.used_gb) : 0;
+        let rem_gb = limit - used;
+        if (rem_gb < 0) rem_gb = 0;
+        
+        document.getElementById('stat-volume').innerText = rem_gb.toFixed(2) + " / " + limit.toFixed(1) + " GB";
+        document.getElementById('stat-days').innerText = (foundUser.remaining_days ? foundUser.remaining_days : "0") + " روز";
+        
         document.getElementById('login-card').classList.add('hidden');
         document.getElementById('ip-card').classList.remove('hidden');
     } else {
-        errorText.innerText = "نام کاربری یا کلمه عبور اشتباه است! ❌";
+        errorText.innerText = "❌ نام کاربری یا کلمه عبور اشتباه است!";
         errorText.style.display = 'block';
     }
+}
+
+// ۴. بخش اختصاصی ادمین: تغییر آنی آی‌پی بدون دستکاری سورس کد
+function saveNewIP() {
+    const ipInput = document.getElementById('new-ip-input').value.trim();
+    if (ipInput === "") {
+        alert("لطفاً آی‌پی معتبر وارد کنید.");
+        return;
+    }
+    currentServerIP = ipInput;
+    localStorage.setItem('saved_server_ip', ipInput);
+    document.getElementById('ip-text').innerText = ipInput;
+    alert("🟢 آی‌پی جدید با موفقیت ثبت شد و کلاینت‌ها آن را دریافت خواهند کرد!");
+}
+
+// ۵. همگام‌سازی دیتابیس کلاینت‌ها با دانلود مستقیم فایل از پنل اصلی سرور
+function syncDatabase(input) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function() {
+        try {
+            const importedData = JSON.parse(reader.result);
+            if (Array.isArray(importedData)) {
+                // اضافه کردن یوزر ادمین پیش‌فرض به لیست وارد شده
+                const hasAdmin = importedData.find(u => u.username === 'admin');
+                if (!hasAdmin) {
+                    importedData.push({"username": "admin", "password": "adminpassword", "status": "Active", "limit_gb": 999, "used_gb": 0, "remaining_days": 999});
+                }
+                localStorage.setItem('users_db', JSON.stringify(importedData));
+                usersDatabase = importedData;
+                alert("🟢 دیتابیس کاربران همگام شد! تعداد کاربران فعال: " + importedData.length);
+                location.reload();
+            }
+        } catch(e) {
+            alert("❌ ساختار فایل بک‌آ‌پ معتبر نیست.");
+        }
+    };
+    reader.readAsText(file);
+}
+
+// ۶. دانلود بک‌آ‌پ اختصاصی از خود مرورگر ادمین
+function downloadLocalBackup() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(usersDatabase, null, 4));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "ssh_pages_backup.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
 }
 
 function copyIP() {
@@ -108,27 +230,8 @@ function logout() {
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
     document.getElementById('ip-card').classList.add('hidden');
+    document.getElementById('admin-card').classList.add('hidden');
     document.getElementById('login-card').classList.remove('hidden');
-}
-
-// تابع جادویی همگام‌سازی خودکار کلاینت‌ها با فایل بک‌آپ پنل اصلی شما
-function syncDatabase(input) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = function() {
-        try {
-            const importedData = JSON.parse(reader.result);
-            if (Array.isArray(importedData)) {
-                localStorage.setItem('users_db', JSON.stringify(importedData));
-                usersDatabase = importedData;
-                alert("🟢 دیتابیس کاربران با موفقیت همگام‌سازی شد! تعداد کاربران: " + importedData.length);
-                location.reload();
-            }
-        } catch(e) {
-            alert("❌ فایل بک‌آپ معتبر نیست.");
-        }
-    };
-    reader.readAsText(file);
 }
 </script>
 
